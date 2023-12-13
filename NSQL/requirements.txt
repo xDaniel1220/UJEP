@@ -1,3 +1,5 @@
 flask
 redis
 pymongo
+bcrypt
+flask_sqlalchemy
