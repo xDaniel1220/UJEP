@@ -42,7 +42,7 @@ def login():
         if user and user.check_password(password):
             session['username'] = user.username
             session['password'] = user.password
-            return redirect('/dashboard')
+            return redirect(url_for('dashboard'))
         else:
             return render_template('login.html', error='Inavlid user')
         
@@ -56,15 +56,21 @@ def register():
         new_user = User(username=username, password=password)
         db.session.add(new_user)
         db.session.commit()
-        return redirect('/login')
+        return redirect(url_for('login'))
     return render_template('register.html')
 
 @app.route('/dashboard')
 def dashboard():
-    if session['username']:
-        user = User.query.filter_by(username=session['username']).first()
-        return render_template('dashboard.html', user=user)
-    return redirect('/login')
+    try:
+        if session['username']:
+            user = User.query.filter_by(username=session['username']).first()
+            return render_template('dashboard.html', user=user)
+    except:
+        return redirect(url_for('login'))
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
