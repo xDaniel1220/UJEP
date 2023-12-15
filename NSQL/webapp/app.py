@@ -1,76 +1,89 @@
 from flask import Flask, render_template, url_for, request, redirect, session
 from redis import Redis
 from pymongo import MongoClient
-from flask_sqlalchemy import SQLAlchemy
 import bcrypt
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'secret_key'
-db = SQLAlchemy(app)
 
 redis = Redis(host='redis', port=6379)
-mongo = MongoClient("mongodb://mongodb:27017", connect=False)
+mongo = MongoClient("mongodb://localhost:27017", connect=False)
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), nullable=False, unique=True)
-    password = db.Column(db.String(80), nullable=False)
+db = mongo['NSQL']
+users = db['Users']
 
+class User():
     def __init__(self, username, password):
         self.username = username
         self.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-    def check_password(self, password):
-        return bcrypt.checkpw(password.encode('utf-8'), self.password.encode('utf-8'))
     
-with app.app_context():
-    db.create_all()
+    def get_password(self):
+        return self.password
+    
+    def get_username(self):
+        return self.username
+
+
+def check_password(password, encrypted):
+    return bcrypt.checkpw(password.encode('utf-8'), encrypted.encode('utf-8'))
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('index.html'), 404
 
 @app.route('/')
 @app.route('/home')
 def index():
     return render_template('index.html')
 
-@app.route('/login', methods=['GET','POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-
-        if user and user.check_password(password):
-            session['username'] = user.username
-            session['password'] = user.password
-            return redirect(url_for('dashboard'))
-        else:
-            return render_template('login.html', error='Inavlid user')
-        
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET','POST'])
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        new_user = User(username=username, password=password)
-        db.session.add(new_user)
-        db.session.commit()
+        new_user = User(username, password)
+        users.insert_one({"username" : new_user.get_username(), "password" : new_user.get_password()})
         return redirect(url_for('login'))
+    
     return render_template('register.html')
 
-@app.route('/dashboard')
-def dashboard():
-    try:
-        if session['username']:
-            user = User.query.filter_by(username=session['username']).first()
-            return render_template('dashboard.html', user=user)
-    except:
-        return redirect(url_for('login'))
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        found_user = users.find_one({"username" : username})
+
+        if found_user and check_password(password, found_user['password']):
+            session['username'] = found_user['username']
+            session['password'] = found_user['password']
+            return redirect(url_for('dashboard'))
+        else:
+            return render_template('login.html', error='Invalid user')
+        
+    return render_template('login.html')
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
+
+@app.route('/dashboard')
+def dashboard():
+    if session.get('username') is not None:
+        found_user = users.find_one({"username" : session['username']})
+        return render_template('dashboard.html', user=found_user)
+    else:
+        return redirect(url_for('login'))
+
+@app.route('/allusers')
+def allusers():
+    return render_template('users.html', users=users.find())
+
+@app.route('/edit/<user>')
+def edit(user):
+    found_user = users.find_one({"username" : user})
+    return 'Hello ' + found_user['username'] + '</br> Your password is ' + found_user['password']
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)

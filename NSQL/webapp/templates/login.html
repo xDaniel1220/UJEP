@@ -3,7 +3,6 @@
 {% block subtitle %}
 Login
 {% endblock %}
-
 {% block main %}
 <div class="container">
     <div class=" row justify-content-center">
@@ -11,13 +10,13 @@ Login
             <h2>Login form</h2>
             <form action="/login" method="POST">
                 <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" class="form-control" id="username" placeholder="Enter username" name="username">
+                    <label for="username">Username:</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter username" name="username">
                 </div>
 
                 <div class="form-group">
-                <label for="pwd">Password:</label>
-                <input type="password" class="form-control" id="pwd" placeholder="Enter password" name="password">
+                    <label for="pwd">Password:</label>
+                    <input type="password" class="form-control" id="pwd" placeholder="Enter password" name="password">
                 </div>
 
                 <button type="submit" class="btn btn-dark">Submit</button>

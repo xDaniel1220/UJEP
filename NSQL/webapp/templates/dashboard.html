@@ -6,7 +6,7 @@ Dashboard
 
 {% block main %}
 <h2>Dashboard</h2>
-<p><b>Username: </b>{{user.username}}</p>
-<p><b>Password: </b>{{user.password}}</p>
+<p><b>Username: </b>{{user['username']}}</p>
+<p><b>Password: </b>{{user['password']}}</p>
 <a href="{{ url_for('logout') }}" class="btn btn-dark">Logout</a>
 {% endblock %}
