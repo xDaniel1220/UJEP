@@ -1,3 +1,6 @@
-footer {
-    padding-left: 1em;
-  }
+#viz {
+    width: 900px;
+    height: 700px;
+    border: 1px solid lightgray;
+    font: 22pt arial;
+}

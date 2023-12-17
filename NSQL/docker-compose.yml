@@ -9,17 +9,30 @@ services:
     volumes:
       - ./webapp:/webapp
     depends_on:
-      - redis
+      neo4j:
+        condition: service_healthy
   redis:
     image: redislabs/redismod
     container_name: redis
     ports:
       - "6379:6379"
+    depends_on:
+      - mongodb
+  redisinsight:
+    image: redislabs/redisinsight:latest
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./webapp:/webapp/db
+    depends_on:
+      - redis
   mongodb:
     image: mongo:latest 
     container_name: mongodb
     ports:
       - "27017:27017"
+    depends_on:
+      - neo4j
   neo4j:
     image: 'neo4j:latest'
     ports:
