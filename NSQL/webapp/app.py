@@ -23,31 +23,36 @@ user_settings = db['Settings']
 # Neo4j setup
 graph = Graph('bolt://neo4j:7687', auth=('neo4j', 'adminpass'))
 
-sol = Node('System', name='Sol', spectral_class='G2', temperature=5830, mass=1, radius=696300, magnitude=4.85)
-systems = [sol]
-
-earth = Node('Planet', name="Earth", planet_type="Rock", gravity=1, temperature='Cold',
-             atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
-             flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
-mars = Node('Planet', name="Mars", planet_type="Rock", gravity=1, temperature='Cold',
-             atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
-             flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
-planets = [earth, mars]
-
-sol_earth = Relationship(sol, 'HAS_PLANET', earth)
-sol_mars = Relationship(sol, 'HAS_PLANET', mars)
-relationships = [sol_earth, sol_mars]
-
-for system in systems:
-    graph.create(system)
-
-for planet in planets:
-    graph.create(planet)
-
-for relationship in relationships:
-    graph.create(relationship)
-
 # Functions
+def initiateNeo():
+        # Delete entire neo4j db
+        graph.run('MATCH (n) DETACH DELETE n')
+
+        # Reintiate db
+        sol = Node('System', name='Sol', spectral_class='G2', temperature=5830, mass=1, radius=696300, magnitude=4.85)
+        systems = [sol]
+
+        earth = Node('Planet', name="Earth", planet_type="Rock", gravity=1, temperature='Cold',
+                    atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
+                    flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
+        mars = Node('Planet', name="Mars", planet_type="Rock", gravity=1, temperature='Cold',
+                    atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
+                    flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
+        planets = [earth, mars]
+
+        sol_earth = Relationship(sol, 'HAS_PLANET', earth)
+        sol_mars = Relationship(sol, 'HAS_PLANET', mars)
+        relationships = [sol_earth, sol_mars]
+
+        for system in systems:
+            graph.create(system)
+
+        for planet in planets:
+            graph.create(planet)
+
+        for relationship in relationships:
+            graph.create(relationship)
+
 def check_password(password, encrypted):
     return bcrypt.checkpw(password.encode('utf-8'), encrypted.encode('utf-8'))
 
@@ -78,6 +83,11 @@ def get_user(user):
         user_json = dumps(users.find_one({'username' : user}))
         redis.set(user, user_json)
         redis.expire(user, redis_cache_time)
+
+        if user_json == 'null':
+            session.clear()
+            return redirect(url_for('login'))
+
         return eval(user_json)
 
 # Routes
@@ -88,6 +98,8 @@ def page_not_found(error):
 @app.route('/')
 @app.route('/home')
 def index():
+    if session.get('username') is not None:
+        get_user(session['username'])
     return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
