@@ -1,0 +1,14 @@
+{% extends "template.html" %}
+
+{% block subtitle %}
+Dashboard
+{% endblock %}
+
+{% block main %}
+<div class="container text-center">
+    <h2>Dashboard</h2>
+    <p>Welcome to your dashboard <b>{{user['username']}}</b>!</p>
+    <p>Your password is encrypted and looks like this: <br><b>{{user['password']}}</b></p>
+    <a href="{{ url_for('logout') }}" class="btn btn-dark">Logout</a>
+</div>
+{% endblock %}
