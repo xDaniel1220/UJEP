@@ -21,9 +21,8 @@ function draw() {
             nodes: {
             },
             groups:{
-                System: {color:{border:'#b67c5d', background:'#ccc98d', highlight: {border: "#b6925d", background:"#7bc482"}}, shape:"circle", font:{color: "black", size:8, strokeWidth: 0}, size:6},
-                Planet: {color:{border:'#5d79b6', background:'#8d98cc', highlight: {border: "#5d6cb6", background:"#7b8cc4"}}, shape:"circle", font:{color: "black", size:8, strokeWidth: 0}, size:6},
-
+                System: {color:{border:'#d6b54a', background:'#edc951', highlight: {border: "#bf950e", background:"#cea110"}}, shape:"circle", font:{color: "black", size:8, strokeWidth: 0}, size:6},
+                Planet: {color:{border:'#999ba4', background:'#c0c2ce', highlight: {border: "#55565b", background:"#7f8087"}}, shape:"circle", font:{color: "black", size:8, strokeWidth: 0}, size:6},
             },
             interaction: {
                 navigationButtons: true
@@ -67,6 +66,9 @@ function draw() {
 
 {% block main %}
 <div class="container text-center">
+    <h2>Database</h2>
+</div>
+<div class="d-flex align-items-center justify-content-center">
     <div id="viz"></div>
 </div>
 {% endblock %}
