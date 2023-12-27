@@ -23,31 +23,66 @@ user_settings = db['Settings']
 # Neo4j setup
 graph = Graph('bolt://neo4j:7687', auth=('neo4j', 'adminpass'))
 
-sol = Node('System', name='Sol', spectral_class='G2', temperature=5830, mass=1, radius=696300, magnitude=4.85)
-systems = [sol]
-
-earth = Node('Planet', name="Earth", planet_type="Rock", gravity=1, temperature='Cold',
-             atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
-             flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
-mars = Node('Planet', name="Mars", planet_type="Rock", gravity=1, temperature='Cold',
-             atmosphere='Low CO2', magnetosphere=None, water='Safe', fauna=0,
-             flora=0, organic_resources=0, inorganic_resources=5, biomes=2)
-planets = [earth, mars]
-
-sol_earth = Relationship(sol, 'HAS_PLANET', earth)
-sol_mars = Relationship(sol, 'HAS_PLANET', mars)
-relationships = [sol_earth, sol_mars]
-
-for system in systems:
-    graph.create(system)
-
-for planet in planets:
-    graph.create(planet)
-
-for relationship in relationships:
-    graph.create(relationship)
-
 # Functions
+def initiateNeo():
+        # Delete entire neo4j db
+        graph.run('MATCH (n) DETACH DELETE n')
+
+        # Reintiate db
+        sol = Node('System', name='Sol')
+        cheyenne = Node('System', name='Cheyenne')
+        volii = Node('System', name='Volii')
+        porrima = Node('System', name='Porrima')
+        wolf = Node('System', name='Wolf')
+        bessel = Node('System', name='Bessel')
+        altair = Node('System', name='Altair')
+        alpha_centauri = Node('System', name='Alpha Centauri')
+
+        systems = [sol, cheyenne, volii, porrima, wolf, bessel, altair, alpha_centauri]
+
+        earth = Node('Planet', name='Earth')
+        mars = Node('Planet', name='Mars')
+        montara = Node('Planet', name='Montana')
+        volii_alpha = Node('Planet', name='Volii Alpha')
+        porrima2 = Node('Planet', name='Porrima II')
+        porrima3 = Node('Planet', name='Porrima III')
+        chthonia = Node('Planet', name='Chthonia')
+        bessel2 = Node('Planet', name='Bessel II')
+        altair2 = Node('Planet', name='Altair II')
+        jemison = Node('Planet', name='Jemison')
+        akila = Node('Planet', name='Akila')
+        gagarin = Node('Planet', name='Gagarin')
+        olivas = Node('Planet', name='Olivas')
+        planets = [earth, mars, montara, volii_alpha, porrima2, porrima3, chthonia, bessel2, altair2, jemison, akila, gagarin, olivas]
+
+        sol_earth = Relationship(sol, 'HAS_PLANET', earth)
+        sol_mars = Relationship(sol, 'HAS_PLANET', mars)
+        cheyenne_montara = Relationship(cheyenne, 'HAS_PLANET', montara)
+        cheyenne_akila = Relationship(cheyenne, 'HAS_PLANET', akila)
+        volii_volii_alpha = Relationship(volii, 'HAS_PLANET', volii_alpha)
+        porrima_porrima2 = Relationship(porrima, 'HAS_PLANET', porrima2)
+        porrima_porrima3 = Relationship(porrima, 'HAS_PLANET', porrima3)
+        wolf_chthonia = Relationship(wolf, 'HAS_PLANET', chthonia) 
+        bessel_bessel2 = Relationship(bessel, 'HAS_PLANET', bessel2)
+        altair_altair2 = Relationship(altair, 'HAS_PLANET', altair2)
+        alpha_centauri_jemison = Relationship(alpha_centauri, 'HAS_PLANET', jemison)
+        alpha_centauri_gagarin = Relationship(alpha_centauri, 'HAS_PLANET', gagarin)
+        alpha_centauri_olivas = Relationship(olivas, 'HAS_PLANET', jemison)
+        relationships = [sol_earth, sol_mars, cheyenne_montara, cheyenne_akila, volii_volii_alpha,
+                         porrima_porrima2, porrima_porrima3, wolf_chthonia, bessel_bessel2, altair_altair2,
+                         alpha_centauri_jemison, alpha_centauri_gagarin, alpha_centauri_olivas]
+
+        for system in systems:
+            graph.create(system)
+
+        for planet in planets:
+            graph.create(planet)
+
+        for relationship in relationships:
+            graph.create(relationship)
+
+initiateNeo()
+
 def check_password(password, encrypted):
     return bcrypt.checkpw(password.encode('utf-8'), encrypted.encode('utf-8'))
 
@@ -78,6 +113,11 @@ def get_user(user):
         user_json = dumps(users.find_one({'username' : user}))
         redis.set(user, user_json)
         redis.expire(user, redis_cache_time)
+
+        if user_json == 'null':
+            session.clear()
+            return redirect(url_for('login'))
+
         return eval(user_json)
 
 # Routes
@@ -88,6 +128,8 @@ def page_not_found(error):
 @app.route('/')
 @app.route('/home')
 def index():
+    if session.get('username') is not None:
+        get_user(session['username'])
     return render_template('index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -120,11 +162,12 @@ def login():
         password = request.form['password']
         found_user = get_user(username)
 
-        if found_user and check_password(password, found_user['password']):
+        try:
+            found_user and check_password(password, found_user['password'])
             session['username'] = found_user['username']
             session['password'] = found_user['password']
             return redirect(url_for('dashboard'))
-        else:
+        except:
             return render_template('login.html', error='Invalid user')
         
     return render_template('login.html')
