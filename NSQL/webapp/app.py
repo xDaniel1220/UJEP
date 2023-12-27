@@ -23,6 +23,7 @@ user_settings = db['Settings']
 # Neo4j setup
 graph = Graph('bolt://neo4j:7687', auth=('neo4j', 'adminpass'))
 
+
 # Functions
 def initiateNeo():
         # Delete entire neo4j db
@@ -81,13 +82,17 @@ def initiateNeo():
         for relationship in relationships:
             graph.create(relationship)
 
+
 initiateNeo()
+
 
 def check_password(password, encrypted):
     return bcrypt.checkpw(password.encode('utf-8'), encrypted.encode('utf-8'))
 
+
 def encrypt_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
 
 # Get user_settings from Redis. If not in Redis get from MongoDB and store in Redis
 def get_user_settings(user):
@@ -105,6 +110,8 @@ def get_user_settings(user):
 
         return eval(user_settings_json)
 # Get user from Redis. If not in Redis get from MongoDB and store in Redis
+
+
 def get_user(user):
     if redis.exists(user):
         data = json.loads(redis.get(user).decode('utf-8'))
@@ -116,14 +123,16 @@ def get_user(user):
 
         if user_json == 'null':
             session.clear()
-            return redirect(url_for('login'))
+            # return redirect(url_for('login'))
 
         return eval(user_json)
+
 
 # Routes
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('index.html'), 404
+
 
 @app.route('/')
 @app.route('/home')
@@ -132,11 +141,16 @@ def index():
         get_user(session['username'])
     return render_template('index.html')
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+
+        if get_user(username) is not None:
+            return render_template('register.html', error='User already exists')
+
         encrypted_password = encrypt_password(password)
         users.insert_one({"username": username, "password": encrypted_password})
 
@@ -155,6 +169,7 @@ def register():
     
     return render_template('register.html')
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -172,10 +187,12 @@ def login():
         
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -184,6 +201,7 @@ def dashboard():
         return render_template('dashboard.html', user=found_user)
     else:
         return redirect(url_for('login'))
+
 
 @app.route('/settings/<user>', methods = ['GET', 'POST'])
 def edit_user(user):
@@ -209,6 +227,7 @@ def edit_user(user):
         
         return redirect(url_for('dashboard'))
 
+
 @app.route('/database')
 def database():
     if session.get('username') is not None:
@@ -216,6 +235,7 @@ def database():
         return render_template('database.html', user=found_user)
     else:
         return redirect(url_for('login'))
+
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5001)
