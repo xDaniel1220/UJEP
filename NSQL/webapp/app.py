@@ -100,9 +100,11 @@ def get_user_settings(user):
         data = json.loads(redis.get(f"{user}_settings").decode('utf-8'))
         return data
     else:
-        user_settings_json = dumps(user_settings.find_one({'username' : user}))
-        redis.set(f"{user}_settings", user_settings_json)
-        redis.expire(f"{user}_settings", redis_cache_time)
+        user_settings_json = dumps(user_settings.find_one({'username': user}))
+
+        if user_settings_json != 'null':
+            redis.set(f"{user}_settings", user_settings_json)
+            redis.expire(f"{user}_settings", redis_cache_time)
 
         # Checking if user_settings_json is null. If yes change it into a dictionary
         if user_settings_json == 'null':
@@ -115,17 +117,22 @@ def get_user_settings(user):
 def get_user(user):
     if redis.exists(user):
         data = json.loads(redis.get(user).decode('utf-8'))
+        print('We get data from Redis')
+        print(data)
         return data
     else:
-        user_json = dumps(users.find_one({'username' : user}))
-        redis.set(user, user_json)
-        redis.expire(user, redis_cache_time)
+        user_json = dumps(users.find_one({'username': user}))
+
+        if user_json != 'null':
+            redis.set(user, user_json)
+            redis.expire(user, redis_cache_time)
 
         if user_json == 'null':
             session.clear()
             # return redirect(url_for('login'))
 
-        return eval(user_json)
+        print('We get data from MongoDB')
+        return json.loads(user_json)
 
 
 # Routes
@@ -147,8 +154,10 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        found_user = get_user(username)
 
-        if get_user(username) is not None:
+        if found_user is not None:
+            print(get_user(username))
             return render_template('register.html', error='User already exists')
 
         encrypted_password = encrypt_password(password)
@@ -160,11 +169,13 @@ def register():
         dob = request.form['dob']
         email = request.form['email']
 
-        json = {'username': username, 'first_name': first_name, 'last_name': last_name, 'address': address, 'dob': dob, 'email': email}
-        user_settings.insert_one(json)
+        json_file = {'username': username, 'first_name': first_name, 'last_name': last_name, 'address': address, 'dob': dob, 'email': email}
+        user_settings.insert_one(json_file)
 
-        session['username'] = username
-        session['password'] = encrypted_password
+        session['username'] = request.form['username']
+        session['password'] = request.form['password']
+        print(username)
+        print(encrypted_password)
         return redirect(url_for('dashboard'))
     
     return render_template('register.html')
@@ -175,15 +186,17 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        found_user = get_user(username)
 
-        try:
-            found_user and check_password(password, found_user['password'])
+        if get_user(username) is None:
+            return render_template('login.html', error='Invalid user')
+
+        found_user = get_user(username)
+        if found_user and check_password(password, found_user['password']):
             session['username'] = found_user['username']
             session['password'] = found_user['password']
             return redirect(url_for('dashboard'))
-        except:
-            return render_template('login.html', error='Invalid user')
+        else:
+            return render_template('login.html', error='Invalid password')
         
     return render_template('login.html')
 

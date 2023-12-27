@@ -18,6 +18,11 @@ Log in
                     <input type="password" class="form-control" id="password" placeholder="Enter password" name="password" required>
                 </div>
                 <button type="submit" class="btn btn-dark">Submit</button>
+                {% if error %}
+                    <div class="alert alert-danger mt-3" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
             </form>
         </div>
     </div>
