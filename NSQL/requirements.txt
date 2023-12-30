@@ -1,5 +1,5 @@
-flask
-redis
-pymongo
-bcrypt
-py2neo
+flask==3.0.0
+redis==5.0.1
+pymongo==4.6.0
+bcrypt==4.1.1
+py2neo==2021.2.4
