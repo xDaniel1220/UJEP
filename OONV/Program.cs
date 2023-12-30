@@ -1,3 +1,10 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿namespace OONV;
 
-Console.WriteLine("Hello, World!");
+class Program
+{
+    private static void Main(string[] args)
+    {
+        var gameManager = GameManager.Instance;
+        gameManager.Setup();
+    }
+}
