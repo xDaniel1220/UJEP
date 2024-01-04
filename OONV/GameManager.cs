@@ -7,9 +7,20 @@ namespace OONV;
 public class GameManager
 {
     private static GameManager? _instance;
+
+    // PokemonList is a list of all the pokemon in the game
     private List<OPokemon> _pokemonList = new List<OPokemon>();
+
+    // StarterPokemon is a list of all the starter pokemon in the game
     private List<OPokemon> _starterPokemon = new List<OPokemon>();
+
+    // Bushes is a list of all the bushes in the game
     private List<OBush> _bushes = new List<OBush>();
+
+    // Instance of the player
+    private Player _player;
+
+    private Random random = new Random();
 
     public static GameManager Instance
     {
@@ -26,27 +37,259 @@ public class GameManager
         InitializeStartingPokemon();
         InitializePokemon();
         InitiateBushes();
+        InitializePlayer();
+    }
+
+    private void InitializePlayer()
+    {
+        _player = new Player();
+        StringUtils.Print("Please choose a starter pokemon:");
+        StringUtils.Print("-----------------------------");
+
+        for (var i = 0; i < _starterPokemon.Count; i++)
+        {
+            StringUtils.Print((i + 1) + ". " + _starterPokemon[i].Name);
+        }
+
+        StringUtils.Print("-----------------------------");
+        var input = Console.ReadLine();
+
+        if (input?.Length > 0)
+        {
+            switch (input)
+            {
+                case "1":
+                    _player.Pokemon.Add(_starterPokemon[int.Parse(input) - 1]);
+                    _player.SelectedPokemon = _player.Pokemon[0];
+                    break;
+                case "2":
+                    _player.Pokemon.Add(_starterPokemon[int.Parse(input) - 1]);
+                    _player.SelectedPokemon = _player.Pokemon[0];
+                    break;
+                case "3":
+                    _player.Pokemon.Add(_starterPokemon[int.Parse(input) - 1]);
+                    _player.SelectedPokemon = _player.Pokemon[0];
+                    break;
+                default:
+                    _player.Pokemon.Add(_starterPokemon[0]);
+                    _player.SelectedPokemon = _player.Pokemon[0];
+                    break;
+            }
+
+            StringUtils.Print("You chose " + _player.SelectedPokemon.Name + " as your starter pokemon!");
+            StringUtils.Print("You are now ready to start your adventure!\n");
+            StringUtils.Print("Oh no! The pokemon's are hiding in the bushes!");
+            BushSelection();
+        }
+    }
+
+    private void BushSelection()
+    {
+        if (BushCompletionDetection())
+        {
+            StringUtils.Print("You have caught all the pokemon! You win!");
+            return;
+        }
+        
+        StringUtils.Print("Which bush do you want to check?");
+        StringUtils.Print("-----------------------------");
+        for (var i = 0; i < _bushes.Count; i++)
+        {
+            StringUtils.Print("| " + (i + 1) + " " + (_bushes[i].Cleared ? "CLEARED " : ""), false);
+        }
+
+        StringUtils.Print("\n-----------------------------");
+
+        var input = Console.ReadLine();
+
+        if (input.Length > 0)
+        {
+            if (_bushes[(int.Parse(input)) - 1].Cleared)
+            {
+                StringUtils.Print("This bush has already been cleared!\n");
+                BushSelection();
+                return;
+            }
+
+            Battle(_bushes[(int.Parse(input)) - 1]);
+        }
+    }
+
+    private void Battle(OBush bush)
+    {
+        // Reset all the pokemon's hp
+        _player.ResetPokemonHp();
+        ResetBushesPokemonHp();
+        
+        StringUtils.Print("You have encountered " + bush.Pokemon.Name + "!\n");
+        if (_player.Pokemon.Count == 1)
+        {
+            BattleSequenceOne(bush);
+            return;
+        }
+
+        BattleSequenceTwo(bush);
     }
     
+    private bool BushCompletionDetection()
+    {
+        var completedBushes = 0;
+        foreach (var bush in _bushes)
+        {
+            if (bush.Cleared)
+                completedBushes++;
+        }
+
+        return completedBushes >= _bushes.Count;
+    }
+
+    private void BattleSequenceOne(OBush bush)
+    {
+        StringUtils.Print($"Fighting (AI) {bush.Pokemon.Name} with (Player) {_player.SelectedPokemon.Name}!");
+        while (_player.SelectedPokemon.Hp > 0 && bush.Pokemon.Hp > 0)
+        {
+            // Player attack sequence
+            StringUtils.Print("--------------- Fight - Player --------------");
+            StringUtils.Print($"Attacking {bush.Pokemon.Name}. DMG: {_player.SelectedPokemon.Dmg}");
+            bush.Pokemon.Hp -= _player.SelectedPokemon.Dmg;
+            StringUtils.Print($"(Player) {_player.SelectedPokemon.Name} HP: {_player.SelectedPokemon.Hp}");
+            StringUtils.Print($"(AI) {bush.Pokemon.Name} HP: {bush.Pokemon.Hp}");
+            StringUtils.Print("------------------------------------\n");
+            Thread.Sleep(1000);
+
+            // Check if AI's health is below 0 after player attack
+            if (bush.Pokemon.Hp <= 0)
+            {
+                StringUtils.Print($"{bush.Pokemon.Name} fainted! You caught {bush.Pokemon.Name}!");
+                bush.Cleared = true;
+                _player.Pokemon.Add(bush.Pokemon);
+
+                // Call BushSelection()
+                Thread.Sleep(1000);
+                StringUtils.Print("\n\n\n\n");
+                BushSelection();
+                break;
+            }
+
+            // AI attack sequence
+            StringUtils.Print("--------------- Fight - AI --------------");
+            StringUtils.Print($"Attacking {_player.SelectedPokemon.Name}. DMG: {bush.Pokemon.Dmg}");
+            _player.SelectedPokemon.Hp -= bush.Pokemon.Dmg;
+            StringUtils.Print($"(AI) {bush.Pokemon.Name} HP: {bush.Pokemon.Hp}");
+            StringUtils.Print($"(Player) {_player.SelectedPokemon.Name} HP: {_player.SelectedPokemon.Hp}");
+            StringUtils.Print("------------------------------------\n");
+            Thread.Sleep(1000);
+
+            // Check if player's health is below 0 after AI attack
+            if (_player.SelectedPokemon.Hp <= 0)
+            {
+                StringUtils.Print($"{_player.SelectedPokemon.Name} fainted!");
+                StringUtils.Print("You lost the battle!");
+
+                // Call BushSelection()
+                Thread.Sleep(1000);
+                StringUtils.Print("\n\n\n\n");
+                BushSelection();
+                break;
+            }
+        }
+    }
+
+    private void BattleSequenceTwo(OBush bush)
+    {
+        StringUtils.Print("------------------------------------");
+        StringUtils.Print("Choose a pokemon to fight with:");
+        for (var i = 0; i < _player.Pokemon.Count; i++)
+        {
+            StringUtils.Print((i + 1) + ". " + _player.Pokemon[i].Name);
+        }
+
+        StringUtils.Print("------------------------------------");
+
+        var input = Console.ReadLine();
+
+        if (input.Length > 0)
+        {
+            _player.SelectedPokemon = _player.Pokemon[int.Parse(input) - 1];
+
+            StringUtils.Print($"Fighting (AI) {bush.Pokemon.Name} with (Player) {_player.SelectedPokemon.Name}!");
+            while (_player.SelectedPokemon.Hp > 0 && bush.Pokemon.Hp > 0)
+            {
+                // Player attack sequence
+                StringUtils.Print("--------------- Fight - Player --------------");
+                StringUtils.Print($"Attacking {bush.Pokemon.Name}. DMG: {_player.SelectedPokemon.Dmg}");
+                bush.Pokemon.Hp -= _player.SelectedPokemon.Dmg;
+                StringUtils.Print($"(Player) {_player.SelectedPokemon.Name} HP: {_player.SelectedPokemon.Hp}");
+                StringUtils.Print($"(AI) {bush.Pokemon.Name} HP: {bush.Pokemon.Hp}");
+                StringUtils.Print("------------------------------------\n");
+                Thread.Sleep(1000);
+
+                // Check if AI's health is below 0 after player attack
+                if (bush.Pokemon.Hp <= 0)
+                {
+                    StringUtils.Print($"{bush.Pokemon.Name} fainted! You caught {bush.Pokemon.Name}!");
+                    bush.Cleared = true;
+                    _player.Pokemon.Add(bush.Pokemon);
+
+                    // Call BushSelection()
+                    Thread.Sleep(1000);
+                    StringUtils.Print("\n\n\n\n");
+                    BushSelection();
+                    break;
+                }
+
+                // AI attack sequence
+                StringUtils.Print("--------------- Fight - AI --------------");
+                StringUtils.Print($"Attacking {_player.SelectedPokemon.Name}. DMG: {bush.Pokemon.Dmg}");
+                _player.SelectedPokemon.Hp -= bush.Pokemon.Dmg;
+                StringUtils.Print($"(AI) {bush.Pokemon.Name} HP: {bush.Pokemon.Hp}");
+                StringUtils.Print($"(Player) {_player.SelectedPokemon.Name} HP: {_player.SelectedPokemon.Hp}");
+                StringUtils.Print("------------------------------------\n");
+                Thread.Sleep(1000);
+
+                // Check if player's health is below 0 after AI attack
+                if (_player.SelectedPokemon.Hp <= 0)
+                {
+                    StringUtils.Print($"{_player.SelectedPokemon.Name} fainted!");
+                    StringUtils.Print("You lost the battle!");
+
+                    // Call BushSelection()
+                    Thread.Sleep(1000);
+                    StringUtils.Print("\n\n\n\n");
+                    BushSelection();
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void ResetBushesPokemonHp() 
+    {
+        foreach (var bush in _bushes)
+        {
+            bush.ResetPokemonHp();
+        }
+    }
+
+    // This method is used to initialize all the starter pokemon in the game
     private void InitializeStartingPokemon()
     {
         var builder = new IPokemonBuilder();
-        var random = new Random();
-        
+
         // Turtwig
         builder.Reset();
         builder.SetName("Turtwig");
         builder.SetHp(100);
         builder.SetDmg(random.Next(35, 50));
         _starterPokemon.Add(builder.GetPokemon());
-        
+
         // Piplup
         builder.Reset();
         builder.SetName("Piplup");
         builder.SetHp(100);
         builder.SetDmg(random.Next(35, 50));
         _starterPokemon.Add(builder.GetPokemon());
-        
+
         // Charmander
         builder.Reset();
         builder.SetName("Charmander");
@@ -55,13 +298,12 @@ public class GameManager
         _starterPokemon.Add(builder.GetPokemon());
     }
 
+    // This method is used to initialize all the pokemon in the game
     private void InitializePokemon()
     {
         var builder = new IPokemonBuilder();
-        var random = new Random();
-
         var pokemonNames = new List<string>();
-        
+
         pokemonNames.Add("Bulbasaur");
         pokemonNames.Add("Ivysaur");
         pokemonNames.Add("Venusaur");
@@ -95,13 +337,12 @@ public class GameManager
         }
     }
 
+    // This method is used to initiate the bushes
     private void InitiateBushes()
     {
-        
         var tempPokemonList = new List<OPokemon>(_pokemonList);
-        var random = new Random();
         var bush = new OBush();
-        
+
         for (var i = 0; i < 10; i++)
         {
             bush.BushName = "Bush " + (i + 1);
@@ -110,6 +351,4 @@ public class GameManager
             tempPokemonList.Remove(bush.Pokemon);
         }
     }
-
-
 }

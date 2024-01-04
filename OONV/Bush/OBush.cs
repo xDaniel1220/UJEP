@@ -6,9 +6,15 @@ public class OBush : ICloneable
 {
     private int _location;
     private OPokemon _pokemon;
+    private bool _cleared;
     
     // Might not use this, dont know yet. Lol
     private string _bushName;
+
+    public OBush()
+    {
+        _cleared = false;
+    }
 
     public int Location
     {
@@ -26,6 +32,17 @@ public class OBush : ICloneable
     {
         get => _bushName;
         set => _bushName = value;
+    }
+    
+    public bool Cleared
+    {
+        get => _cleared;
+        set => _cleared = value;
+    }
+
+    public void ResetPokemonHp()
+    {
+        _pokemon.Hp = 100;
     }
     
     public OBush Clone()
