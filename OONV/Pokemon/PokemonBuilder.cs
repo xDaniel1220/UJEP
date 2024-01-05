@@ -1,6 +1,6 @@
 namespace OONV.Pokemon;
 
-public class IPokemonBuilder : IBuilder
+public class PokemonBuilder : IBuilder
 {
     private OPokemon? _pokemon;
 

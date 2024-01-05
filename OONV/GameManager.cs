@@ -20,7 +20,7 @@ public class GameManager
     // Instance of the player
     private Player _player;
 
-    private Random random = new Random();
+    private Random _random = new Random();
 
     public static GameManager Instance
     {
@@ -54,6 +54,12 @@ public class GameManager
         StringUtils.Print("-----------------------------");
         var input = Console.ReadLine();
 
+        if (input?.Length <= 0)
+        {
+            _player.Pokemon.Add(_starterPokemon[0]);
+            _player.SelectedPokemon = _player.Pokemon[0];
+        }
+
         if (input?.Length > 0)
         {
             switch (input)
@@ -75,12 +81,12 @@ public class GameManager
                     _player.SelectedPokemon = _player.Pokemon[0];
                     break;
             }
-
-            StringUtils.Print("You chose " + _player.SelectedPokemon.Name + " as your starter pokemon!");
-            StringUtils.Print("You are now ready to start your adventure!\n");
-            StringUtils.Print("Oh no! The pokemon's are hiding in the bushes!");
-            BushSelection();
         }
+        
+        StringUtils.Print("You chose " + _player.SelectedPokemon.Name + " as your starter pokemon!");
+        StringUtils.Print("You are now ready to start your adventure!");
+        StringUtils.Print("Oh no! The pokemon's are hiding in the bushes!");
+        BushSelection();
     }
 
     private void BushSelection()
@@ -102,8 +108,21 @@ public class GameManager
 
         var input = Console.ReadLine();
 
-        if (input.Length > 0)
+        if (input?.Length <= 0)
         {
+            StringUtils.Print("\n\n");
+            BushSelection();
+        }
+
+        if (input?.Length > 0)
+        {
+            if(int.Parse(input) > _bushes.Count)
+            {
+                StringUtils.Print("\n\n");
+                BushSelection();
+                return;
+            }
+            
             if (_bushes[(int.Parse(input)) - 1].Cleared)
             {
                 StringUtils.Print("This bush has already been cleared!\n");
@@ -208,8 +227,14 @@ public class GameManager
 
         var input = Console.ReadLine();
 
-        if (input.Length > 0)
+        if (input?.Length > 0)
         {
+            if (int.Parse(input) - 1 >= _player.Pokemon.Count)
+            {
+                StringUtils.Print("\n\n");
+                BattleSequenceTwo(bush);
+            }
+            
             _player.SelectedPokemon = _player.Pokemon[int.Parse(input) - 1];
 
             StringUtils.Print($"Fighting (AI) {bush.Pokemon.Name} with (Player) {_player.SelectedPokemon.Name}!");
@@ -274,34 +299,34 @@ public class GameManager
     // This method is used to initialize all the starter pokemon in the game
     private void InitializeStartingPokemon()
     {
-        var builder = new IPokemonBuilder();
+        var builder = new PokemonBuilder();
 
         // Turtwig
         builder.Reset();
         builder.SetName("Turtwig");
         builder.SetHp(100);
-        builder.SetDmg(random.Next(35, 50));
+        builder.SetDmg(_random.Next(45, 75));
         _starterPokemon.Add(builder.GetPokemon());
 
         // Piplup
         builder.Reset();
         builder.SetName("Piplup");
         builder.SetHp(100);
-        builder.SetDmg(random.Next(35, 50));
+        builder.SetDmg(_random.Next(45, 75));
         _starterPokemon.Add(builder.GetPokemon());
 
         // Charmander
         builder.Reset();
         builder.SetName("Charmander");
         builder.SetHp(100);
-        builder.SetDmg(random.Next(35, 50));
+        builder.SetDmg(_random.Next(45, 75));
         _starterPokemon.Add(builder.GetPokemon());
     }
 
     // This method is used to initialize all the pokemon in the game
     private void InitializePokemon()
     {
-        var builder = new IPokemonBuilder();
+        var builder = new PokemonBuilder();
         var pokemonNames = new List<string>();
 
         pokemonNames.Add("Bulbasaur");
@@ -329,9 +354,9 @@ public class GameManager
         for (var i = 0; i < 10; i++)
         {
             builder.Reset();
-            builder.SetName(pokemonNames[random.Next(0, pokemonNames.Count)]);
+            builder.SetName(pokemonNames[_random.Next(0, pokemonNames.Count)]);
             builder.SetHp(100);
-            builder.SetDmg(random.Next((i + 5) + 20, (i + 5) + 50));
+            builder.SetDmg(_random.Next((i + 5) + 20, (i + 5) + 50));
             _pokemonList.Add(builder.GetPokemon());
             pokemonNames.Remove(builder.GetPokemon().Name);
         }
@@ -346,7 +371,7 @@ public class GameManager
         for (var i = 0; i < 10; i++)
         {
             bush.BushName = "Bush " + (i + 1);
-            bush.Pokemon = tempPokemonList[random.Next(0, tempPokemonList.Count)];
+            bush.Pokemon = tempPokemonList[_random.Next(0, tempPokemonList.Count)];
             _bushes.Add(bush.Clone());
             tempPokemonList.Remove(bush.Pokemon);
         }

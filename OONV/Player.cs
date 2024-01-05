@@ -16,7 +16,6 @@ public class Player
     public List<OPokemon> Pokemon
     {
         get => _pokemon;
-        set => _pokemon = value;
     }
 
     public void ResetPokemonHp()
